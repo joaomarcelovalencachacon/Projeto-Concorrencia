@@ -54,6 +54,8 @@ public class PlayerWindow {
     private final JButton miniPlayerNextButton;
     private final JToggleButton miniPlayerRepeatButton;
 
+
+
     /**
      * @param windowTitle             String to be used as the window title.
      * @param queueArray              String[][] with the queue. The array should contain in each position one array

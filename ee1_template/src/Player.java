@@ -7,6 +7,7 @@ import javazoom.jl.player.FactoryRegistry;
 import support.PlayerWindow;
 import support.Song;
 
+import javax.swing.*;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -209,7 +210,6 @@ public class Player {
         }).start();
     }
 
-
     public void removeFromQueue(String SongToBeRemoved) {
         new Thread(new Runnable() {
             @Override
@@ -246,13 +246,12 @@ public class Player {
             @Override
             public void run() {
                 lock.lock();
-                try {String SongToPlay = SongToBePlayed;
+                try {
                     maxFrames = new Mp3File(SongToBePlayed).getFrameCount();
                     device = FactoryRegistry.systemRegistry().createAudioDevice();
                     device.open(decoder = new Decoder());
                     bitstream = new Bitstream(new BufferedInputStream(new FileInputStream(SongToBePlayed)));
 //                        bitstream = new Bitstream(array[1].getBufferedInputStream());
-                    // progressBar.setMaximum(maxFrames);
                 } catch (JavaLayerException | InvalidDataException | UnsupportedTagException | IOException ex) {
                     ex.printStackTrace();
                 }
@@ -266,7 +265,6 @@ public class Player {
                             SampleBuffer output = (SampleBuffer) decoder.decodeFrame(h, bitstream);
                             device.write(output.getBuffer(), 0, output.getBufferLength());
                             bitstream.closeFrame();
-                            // demoWindow.setProgress(currentFrame);
                             currentFrame++;
                         } while (h != null);
                     } catch (JavaLayerException e) {
