@@ -420,6 +420,7 @@ public class PlayerWindow {
      * @param currentTime Current time of the current song.
      * @param totalTime   Total time of the current song.
      */
+
     public void setTime(int currentTime, int totalTime) {
         miniPlayerCurrentTime.setText(SecondsToString.currentTimeToString(currentTime / 1000, totalTime / 1000));
         miniPlayerTotalTime.setText(SecondsToString.lengthToString(totalTime / 1000));
@@ -448,11 +449,14 @@ public class PlayerWindow {
         return String.valueOf((queueList.getValueAt(queueList.getSelectedRow(), 5)));
     }
 
+    public int getSelectedSongIndex() { return Integer.valueOf(queueList.getSelectedRow()); }
+
     /**
      * Should be called whenever the user manually changes the scrubber state with the cursor.
      *
      * @return the current value of the scrubber.
      */
+
     public int getScrubberValue() {
         return miniPlayerScrubber.getValue();
     }
