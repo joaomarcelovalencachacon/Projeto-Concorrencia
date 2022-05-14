@@ -14,8 +14,11 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import java.util.Collections;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
+
+import java.util.Random;
 
 public class Player {
 
@@ -58,6 +61,11 @@ public class Player {
     private boolean StopAcionado = false;
     private boolean DontSkip = false;
     private boolean IsPlaying = false;
+    Random rand = new Random();
+    private int Command = 0;
+    private boolean PlayNowAcionado = false;
+    private boolean RemoveuMusicaSelecionada = false;
+    private ArrayList<Song> ArrayOriginal = new ArrayList<>();
 
     public Player() {
 
@@ -82,15 +90,38 @@ public class Player {
         ActionListener buttonListenerPrevious = e -> previous();
         ActionListener buttonListenerShuffle = e -> {
             shuffle = !shuffle;
-            if (shuffle) {
-                pause();
+            if (shuffle){
+                ArrayOriginal.clear();
+                ArrayOriginal.addAll(ArrayOfSongs);
+                /*for (int i = 0; i < ArrayOfSongs.size(); i++) {
+                    ArrayOriginal.add(ArrayOfSongs.get(i));
+                }*/
+                if (IsPlaying){
+                    ArrayOfSongs.remove(IndiceMusicaAtual);
+                    Collections.shuffle(ArrayOfSongs);
+                    ArrayOfSongs.add(0, ArrayOriginal.get(IndiceMusicaAtual));
+                    IndiceMusicaAtual = 0;
+                    window.setEnabledPreviousButton(false);
+                    window.updateQueueList(getDisplayInfo());
+                } else {
+                    Collections.shuffle(ArrayOfSongs);
+                    window.updateQueueList(getDisplayInfo());
+                }
+            } else {
+                String EndereçoMusicaAtual = ArrayOfSongs.get(IndiceMusicaAtual).getFilePath();
+                for (int i = 0; i < ArrayOriginal.size(); i++) {
+                    if (ArrayOriginal.get(i).getFilePath() == EndereçoMusicaAtual) {
+                        IndiceMusicaAtual = i;
+                        break;
+                    }
+                }
+                ArrayOfSongs.clear();
+                ArrayOfSongs.addAll(ArrayOriginal);
+                window.updateQueueList(getDisplayInfo());
             }
         };
         ActionListener buttonListenerRepeat = e -> {
             repeat = !repeat;
-            if (repeat) {
-                pause();
-            }
         };
 
         //mouse events
@@ -241,6 +272,10 @@ public class Player {
                     }
                     if (!MusicaNaPlaylist) ArrayOfSongs.add(newSong);
 
+                    if (ArrayOfSongs.size() != 0 & IndiceMusicaSelecionada < ArrayOfSongs.size() - 1 & IsPlaying) {
+                        window.setEnabledNextButton(true);
+                    }
+
                     window.updateQueueList(getDisplayInfo());
 
                 } catch (IOException | BitstreamException | UnsupportedTagException | InvalidDataException dq) {
@@ -263,7 +298,7 @@ public class Player {
 
                     if (IndiceMusicaAtual == IndiceMusicaSelecionada){
                         IndiceMusicaAtual -= 1;
-                        next();
+                        RemoveuMusicaSelecionada = true;
                         if (IndiceMusicaAtual == ArrayOfSongs.size() - 1){
                             stop();
                         }
@@ -320,10 +355,6 @@ public class Player {
                         lockPlayPause.lock();
                         try{
                             if (StopAcionado){
-                                StopAcionado = false;
-                                FrameAtual = 0;
-                                window.resetMiniPlayer();
-                                DontSkip = true;
                                 break;
                             }
                             if (PlayerPausado){
@@ -331,11 +362,18 @@ public class Player {
                             }
                             if (NextAcionado){
                                 NextAcionado = false;
+                                Command = 0; //next
                                 break;
                             }
                             if (PreviousAcionado){
                                 PreviousAcionado = false;
-                                IndiceMusicaAtual -=2;
+                                Command = 1; //previous
+                                break;
+                            }
+                            if (PlayNowAcionado){
+                                break;
+                            }
+                            if (RemoveuMusicaSelecionada){
                                 break;
                             }
                             window.setTime(FrameAtual * (int) currentSong.getMsPerFrame(), (int) currentSong.getMsLength());
@@ -347,15 +385,38 @@ public class Player {
                             lockPlayPause.unlock();
                         }
                     }
-                    if (DontSkip == false){
+                    if (StopAcionado) {
+                        StopAcionado = false;
                         FrameAtual = 0;
-                        IndiceMusicaAtual++;
-                    }
-                    else{
-                        DontSkip = false;
+                        window.resetMiniPlayer();
                         break;
                     }
-                }
+                    else {
+                        if (PlayNowAcionado) {
+                            PlayNowAcionado = false;
+                            FrameAtual = 0;
+                            IndiceMusicaSelecionada = window.getSelectedSongIndex();
+                            IndiceMusicaAtual = IndiceMusicaSelecionada;
+                        } else {
+                            if (repeat & IndiceMusicaAtual == ArrayOfSongs.size() - 1) {
+                                RemoveuMusicaSelecionada = false;
+                                FrameAtual = 0;
+                                IndiceMusicaAtual = 0;
+                            } else {
+                                RemoveuMusicaSelecionada = false;
+                                    if (Command == 0) { //next
+                                        FrameAtual = 0;
+                                        IndiceMusicaAtual++;
+                                    } else if (Command == 1) { //previous
+                                        Command = 0;
+                                        FrameAtual = 0;
+                                        IndiceMusicaAtual--;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                //}
                 IsPlaying = false;
                 window.resetMiniPlayer();
             } catch (JavaLayerException | FileNotFoundException e) {
@@ -386,9 +447,7 @@ public class Player {
                         }
                     }
                     else {
-                        IndiceMusicaSelecionada = window.getSelectedSongIndex();
-                        IndiceMusicaAtual = IndiceMusicaSelecionada - 1;
-                        next();
+                        PlayNowAcionado = true;
                     }
                 } finally {
                     lock.unlock();
@@ -425,6 +484,7 @@ public class Player {
     public void previous() {
         PreviousAcionado = true;
     }
+
     //</editor-fold>
 
     //<editor-fold desc="Getters and Setters">
